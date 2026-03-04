@@ -34,19 +34,19 @@ Build a secure cloud storage application similar to Google Drive with authentica
 
 ### Home Page
 
-![Home Page](screenshots/997.png)
+![Home Page](screenshot/997.png)
 
 ### File Upload Interface
 
-![Upload Page](screenshots/998.png)
+![Upload Page](screenshot/998.png)
 
 ### File Dashboard
 
-![Dashboard](screenshots/999.png)
+![Dashboard](screenshot/999.png)
 
 ### File Sharing
 
-![Sharing](screenshots/1000.png)
+![Sharing](screenshot/1000.png)
 
 ## Installation
 
