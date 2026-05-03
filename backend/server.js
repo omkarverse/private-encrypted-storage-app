@@ -1,9 +1,60 @@
+// require('dotenv').config();
+// const express = require('express');
+// const mongoose = require('mongoose');
+// const cors = require('cors');
+// const cookieParser = require('cookie-parser');
+// const User = require('./models/User'); // Imported User model for mock auth
+
+// const authRoutes = require('./routes/auth');
+// const fileRoutes = require('./routes/files');
+
+// const app = express();
+// const PORT = process.env.PORT || 5000;
+
+// // Middleware
+// app.use(cors({
+//     origin: process.env.CLIENT_URL || 'http://localhost:5174', // Default to Vite port 5174 or 5173
+//     credentials: true,
+// }));
+// app.use(express.json());
+// app.use(cookieParser());
+
+// // Database connection
+// const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/cloudvault';
+// mongoose.connect(mongoURI)
+//     .then(async () => {
+//         console.log('✅ MongoDB connected');
+//         // Ensure mock user exists for bypassed auth
+//         const existingUser = await User.findOne({ email: 'guest@cloudvault.local' });
+//         if (!existingUser) {
+//             await User.create({
+//                 googleId: 'mock-google-id',
+//                 displayName: 'Guest User',
+//                 email: 'guest@cloudvault.local',
+//                 avatar: 'https://ui-avatars.com/api/?name=Guest+User&background=1E2E20&color=AEB784',
+//                 storageUsed: 0
+//             });
+//             console.log('✅ Mock user created');
+//         }
+//     })
+//     .catch(err => console.error('❌ MongoDB connection error:', err));
+
+// // Routes
+// app.use('/auth', authRoutes);
+// app.use('/api/files', fileRoutes);
+
+// // Health check
+// app.get('/', (req, res) => {
+//     res.json({ status: 'CloudVault API is running', timestamp: new Date().toISOString() });
+// });
+
+// app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 require('dotenv').config();
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
-const User = require('./models/User'); // Imported User model for mock auth
+const path = require('path');
+const fs = require('fs');
 
 const authRoutes = require('./routes/auth');
 const fileRoutes = require('./routes/files');
@@ -11,33 +62,33 @@ const fileRoutes = require('./routes/files');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Ensure encrypted-vault folder exists
+const vaultPath = path.join(__dirname, 'encrypted-vault');
+if (!fs.existsSync(vaultPath)) {
+    fs.mkdirSync(vaultPath, { recursive: true });
+    console.log('✅ encrypted-vault folder created');
+}
+
 // Middleware
+const allowedOrigins = [
+    process.env.CLIENT_URL || 'http://localhost:5173',
+    'http://localhost:5174',
+    'https://private-encrypted-storage-app.vercel.app',
+];
+
 app.use(cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5174', // Default to Vite port 5174 or 5173
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.some(o => origin.startsWith(o))) {
+            callback(null, true);
+        } else {
+            callback(null, true); // allow all for demo purposes
+        }
+    },
     credentials: true,
 }));
+
 app.use(express.json());
 app.use(cookieParser());
-
-// Database connection
-const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/cloudvault';
-mongoose.connect(mongoURI)
-    .then(async () => {
-        console.log('✅ MongoDB connected');
-        // Ensure mock user exists for bypassed auth
-        const existingUser = await User.findOne({ email: 'guest@cloudvault.local' });
-        if (!existingUser) {
-            await User.create({
-                googleId: 'mock-google-id',
-                displayName: 'Guest User',
-                email: 'guest@cloudvault.local',
-                avatar: 'https://ui-avatars.com/api/?name=Guest+User&background=1E2E20&color=AEB784',
-                storageUsed: 0
-            });
-            console.log('✅ Mock user created');
-        }
-    })
-    .catch(err => console.error('❌ MongoDB connection error:', err));
 
 // Routes
 app.use('/auth', authRoutes);
@@ -45,7 +96,11 @@ app.use('/api/files', fileRoutes);
 
 // Health check
 app.get('/', (req, res) => {
-    res.json({ status: 'CloudVault API is running', timestamp: new Date().toISOString() });
+    res.json({
+        status: '✅ CloudVault API is running',
+        encryption: 'AES-256-CBC',
+        timestamp: new Date().toISOString()
+    });
 });
 
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
